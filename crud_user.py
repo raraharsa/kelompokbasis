@@ -10,14 +10,19 @@ class CrudUser:
         self.win = tk.Toplevel(master)
         self.win.title("Kelola User")
         self.win.geometry("750x450")
-        self.win.configure(bg="#f8f6f4")
+        self.win.configure(bg="#f3e9dd")  # Coklat muda
 
         # ===================== TITLE =====================
-        tk.Label(self.win, text="KELOLA USER", font=("Poppins", 16, "bold"),
-                 bg="#f8f6f4", fg="#2c3e50").pack(pady=15)
+        tk.Label(
+            self.win,
+            text="KELOLA USER",
+            font=("Poppins", 17, "bold"),
+            bg="#f3e9dd",
+            fg="#5d3a1a"
+        ).pack(pady=15)
 
         # ===================== TABLE =====================
-        table_frame = tk.Frame(self.win, bg="#f8f6f4")
+        table_frame = tk.Frame(self.win, bg="#f3e9dd")
         table_frame.pack(fill="both", expand=True, padx=15, pady=10)
 
         columns = ("id", "nama", "username", "level")
@@ -25,13 +30,20 @@ class CrudUser:
 
         style = ttk.Style()
         style.theme_use("default")
-        style.configure("Treeview",
-                        background="#ecf0f1",
-                        foreground="#2c3e50",
-                        rowheight=25,
-                        fieldbackground="#ecf0f1",
-                        font=("Poppins", 10))
-        style.configure("Treeview.Heading", font=("Poppins", 11, "bold"), foreground="white", background="#34495e")
+        style.configure(
+            "Treeview",
+            background="#fff8f0",       # background isi tabel
+            foreground="#3e2723",
+            rowheight=25,
+            fieldbackground="#fff8f0",
+            font=("Poppins", 10)
+        )
+        style.configure(
+            "Treeview.Heading",
+            font=("Poppins", 11, "bold"),
+            foreground="white",
+            background="#8d6e63"       # Coklat tua untuk heading
+        )
 
         for col in columns:
             self.tree.heading(col, text=col.upper())
@@ -48,12 +60,12 @@ class CrudUser:
         vsb.pack(side="right", fill="y")
 
         # ===================== BUTTONS =====================
-        btn_frame = tk.Frame(self.win, bg="#f8f6f4")
+        btn_frame = tk.Frame(self.win, bg="#f3e9dd")
         btn_frame.pack(pady=10)
 
-        self.create_btn(btn_frame, "Tambah User", "#6a89cc", self.tambah_user, 0)
-        self.create_btn(btn_frame, "Edit User", "#e58e26", self.edit_user, 1)
-        self.create_btn(btn_frame, "Hapus User", "#eb4d4b", self.hapus_user, 2)
+        self.create_btn(btn_frame, "Tambah User", "#8d6e63", self.tambah_user, 0)
+        self.create_btn(btn_frame, "Edit User", "#a07855", self.edit_user, 1)
+        self.create_btn(btn_frame, "Hapus User", "#6d4c41", self.hapus_user, 2)
 
         self.tree.bind("<Double-1>", lambda e: self.edit_user())
 
@@ -62,9 +74,19 @@ class CrudUser:
 
     # ================= BUTTON HELPER =================
     def create_btn(self, parent, text, color, command, col):
-        tk.Button(parent, text=text, bg=color, fg="white", font=("Poppins", 11, "bold"),
-                  relief="flat", activebackground=color, activeforeground="white",
-                  command=command).grid(row=0, column=col, padx=8)
+        tk.Button(
+            parent,
+            text=text,
+            bg=color,
+            fg="white",
+            font=("Poppins", 11, "bold"),
+            relief="flat",
+            activebackground=color,
+            activeforeground="white",
+            padx=12,
+            pady=5,
+            command=command
+        ).grid(row=0, column=col, padx=8)
 
     # ================= LOAD USER =================
     def load_user(self):
@@ -104,24 +126,33 @@ class CrudUser:
     def _form_user(self, mode, data=None):
         win = tk.Toplevel(self.win)
         win.title("Form User")
-        win.geometry("350x320")
-        win.configure(bg="#f8f6f4")
+        win.geometry("350x330")
+        win.configure(bg="#f3e9dd")
 
-        tk.Label(win, text="Nama", bg="#f8f6f4", fg="#2c3e50", font=("Poppins", 11)).pack(pady=5)
+        # ==== INPUTS ====
+        def create_label(text):
+            tk.Label(win, text=text, bg="#f3e9dd", fg="#4e342e",
+                     font=("Poppins", 11)).pack(pady=5)
+
+        create_label("Nama")
         nama_e = tk.Entry(win, font=("Poppins", 11))
         nama_e.pack(fill="x", padx=15)
 
-        tk.Label(win, text="Username", bg="#f8f6f4", fg="#2c3e50", font=("Poppins", 11)).pack(pady=5)
+        create_label("Username")
         user_e = tk.Entry(win, font=("Poppins", 11))
         user_e.pack(fill="x", padx=15)
 
-        tk.Label(win, text="Password", bg="#f8f6f4", fg="#2c3e50", font=("Poppins", 11)).pack(pady=5)
+        create_label("Password")
         pass_e = tk.Entry(win, show="*", font=("Poppins", 11))
         pass_e.pack(fill="x", padx=15)
 
-        tk.Label(win, text="Level", bg="#f8f6f4", fg="#2c3e50", font=("Poppins", 11)).pack(pady=5)
+        create_label("Level")
         level_var = tk.StringVar()
-        level_box = ttk.Combobox(win, textvariable=level_var, values=["admin", "kasir"], font=("Poppins", 11))
+        level_box = ttk.Combobox(
+            win, textvariable=level_var,
+            values=["admin", "kasir"],
+            font=("Poppins", 11)
+        )
         level_box.pack(fill="x", padx=15)
 
         # Jika mode edit → isi datanya
@@ -131,6 +162,7 @@ class CrudUser:
             user_e.insert(0, username)
             level_var.set(level)
 
+        # ================= SIMPAN =================
         def simpan():
             nama = nama_e.get().strip()
             username = user_e.get().strip()
@@ -181,9 +213,17 @@ class CrudUser:
             except Exception as e:
                 messagebox.showerror("Error", f"Gagal simpan:\n{e}")
 
-        tk.Button(win, text="Simpan", bg="#6a89cc", fg="white", font=("Poppins", 12, "bold"),
-                  relief="flat", activebackground="#6a89cc", activeforeground="white",
-                  command=simpan).pack(pady=15)
+        tk.Button(
+            win,
+            text="Simpan",
+            bg="#8d6e63",
+            fg="white",
+            font=("Poppins", 12, "bold"),
+            relief="flat",
+            activebackground="#8d6e63",
+            activeforeground="white",
+            command=simpan
+        ).pack(pady=15)
 
     # ================= HAPUS USER =================
     def hapus_user(self):

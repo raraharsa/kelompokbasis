@@ -2,47 +2,47 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from koneksi import connect_db
 
-
 class CrudWindow:
     def __init__(self, master):
         self.master = master
         self.win = tk.Toplevel(master)
         self.win.title("Kelola Produk")
-        self.win.geometry("750x500")
-        self.win.configure(bg="#f8f6f4")
+        self.win.geometry("780x520")
+        self.win.configure(bg="#f8f3e6")  # Cream background
 
         # =================== TITLE ===================
-        tk.Label(self.win, text="KELOLA PRODUK", font=("Poppins", 16, "bold"),
-                 bg="#f8f6f4", fg="#2c3e50").pack(pady=15)
+        tk.Label(self.win, text="KELOLA PRODUK", font=("Poppins", 18, "bold"),
+                 bg="#f8f3e6", fg="#5b3924").pack(pady=15)
 
         # =================== FORM INPUT ===================
-        frame_form = tk.Frame(self.win, bg="#f8f6f4")
+        frame_form = tk.Frame(self.win, bg="#e8d7c3", bd=2, relief="ridge")
         frame_form.pack(pady=10, padx=15, fill="x")
 
-        tk.Label(frame_form, text="Nama Barang", bg="#f8f6f4", fg="#2c3e50", font=("Poppins", 11)).grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        tk.Label(frame_form, text="Harga", bg="#f8f6f4", fg="#2c3e50", font=("Poppins", 11)).grid(row=1, column=0, padx=5, pady=5, sticky="w")
-        tk.Label(frame_form, text="Stok", bg="#f8f6f4", fg="#2c3e50", font=("Poppins", 11)).grid(row=2, column=0, padx=5, pady=5, sticky="w")
+        labels = ["Nama Barang", "Harga", "Stok"]
+        for i, text in enumerate(labels):
+            tk.Label(frame_form, text=text, bg="#e8d7c3", fg="#5b3924", font=("Poppins", 11)).grid(row=i, column=0, padx=10, pady=8, sticky="w")
 
-        self.nama_entry = tk.Entry(frame_form, font=("Poppins", 11))
-        self.harga_entry = tk.Entry(frame_form, font=("Poppins", 11))
-        self.stok_entry = tk.Entry(frame_form, font=("Poppins", 11))
+        # Entry style
+        self.nama_entry = tk.Entry(frame_form, font=("Poppins", 11), relief="flat", bd=3, bg="#fff5e9")
+        self.harga_entry = tk.Entry(frame_form, font=("Poppins", 11), relief="flat", bd=3, bg="#fff5e9")
+        self.stok_entry = tk.Entry(frame_form, font=("Poppins", 11), relief="flat", bd=3, bg="#fff5e9")
 
-        self.nama_entry.grid(row=0, column=1, pady=5, sticky="ew")
-        self.harga_entry.grid(row=1, column=1, pady=5, sticky="ew")
-        self.stok_entry.grid(row=2, column=1, pady=5, sticky="ew")
+        self.nama_entry.grid(row=0, column=1, pady=8, padx=10, sticky="ew")
+        self.harga_entry.grid(row=1, column=1, pady=8, padx=10, sticky="ew")
+        self.stok_entry.grid(row=2, column=1, pady=8, padx=10, sticky="ew")
 
         frame_form.columnconfigure(1, weight=1)
 
         # =================== BUTTONS ===================
-        btn_frame = tk.Frame(self.win, bg="#f8f6f4")
-        btn_frame.pack(pady=10)
+        btn_frame = tk.Frame(self.win, bg="#f8f3e6")
+        btn_frame.pack(pady=12)
 
-        self.create_btn(btn_frame, "Tambah", "#6a89cc", self.add_barang, 0)
-        self.create_btn(btn_frame, "Update", "#e58e26", self.update_barang, 1)
-        self.create_btn(btn_frame, "Hapus", "#eb4d4b", self.delete_barang, 2)
+        self.create_btn(btn_frame, "Tambah", "#8b5e34", self.add_barang, 0)
+        self.create_btn(btn_frame, "Update", "#b17457", self.update_barang, 1)
+        self.create_btn(btn_frame, "Hapus", "#a64b2a", self.delete_barang, 2)
 
         # =================== TABLE ===================
-        table_frame = tk.Frame(self.win, bg="#f8f6f4")
+        table_frame = tk.Frame(self.win, bg="#f8f3e6")
         table_frame.pack(fill="both", expand=True, padx=15, pady=10)
 
         columns = ("id", "nama", "harga", "stok")
@@ -50,15 +50,20 @@ class CrudWindow:
 
         style = ttk.Style()
         style.theme_use("default")
-        style.configure("Treeview",
-                        background="#ecf0f1",
-                        foreground="#2c3e50",
-                        rowheight=25,
-                        fieldbackground="#ecf0f1",
-                        font=("Poppins", 10))
-        style.configure("Treeview.Heading", font=("Poppins", 11, "bold"), foreground="white", background="#34495e")
 
-        for col, width in zip(columns, [50, 250, 120, 120]):
+        style.configure("Treeview",
+                        background="#f4ede4",
+                        foreground="#3e2723",
+                        rowheight=26,
+                        fieldbackground="#f4ede4",
+                        font=("Poppins", 10))
+
+        style.configure("Treeview.Heading",
+                        font=("Poppins", 11, "bold"),
+                        foreground="white",
+                        background="#5b3924")
+
+        for col, width in zip(columns, [60, 260, 130, 130]):
             self.table.heading(col, text=col.upper())
             self.table.column(col, width=width, anchor="center")
 
@@ -71,8 +76,8 @@ class CrudWindow:
         self.table.bind("<ButtonRelease-1>", self.fill_form)
 
         # =================== TAG WARNA ===================
-        self.table.tag_configure('hampir_habis', background='orange')
-        self.table.tag_configure('habis', background='red', foreground='white')
+        self.table.tag_configure('hampir_habis', background='#ffcc80')
+        self.table.tag_configure('habis', background='#e57373', foreground='white')
 
         self.selected_id = None
         self.load_data()
@@ -80,8 +85,8 @@ class CrudWindow:
     # =================== BUTTON HELPER ===================
     def create_btn(self, parent, text, color, command, col):
         tk.Button(parent, text=text, bg=color, fg="white", font=("Poppins", 11, "bold"),
-                  relief="flat", activebackground=color, activeforeground="white",
-                  command=command).grid(row=0, column=col, padx=8)
+                  relief="flat", padx=15, pady=5, activebackground=color,
+                  activeforeground="white", command=command, bd=4).grid(row=0, column=col, padx=10)
 
     # =================== LOAD DATA ===================
     def load_data(self):
