@@ -38,7 +38,7 @@ class KasirWindow:
         header.pack_propagate(False)
         tk.Label(
             header,
-            text="🧾  FORM TRANSAKSI KASIR - LUMI.CO",
+            text="KASIR - LUMI.CO",
             fg="white",
             bg=self.color_dark,
             font=("Segoe UI", 18, "bold")
@@ -166,9 +166,11 @@ class KasirWindow:
             return tk.Button(actions, text=txt, bg=c, fg="white",
                              relief="flat", font=self.btn_font, command=cmd)
 
+        # NOTE: ganti binding "Simpan Transaksi" ke simpan_dan_cetak
         btn("Hapus Item", self.hapus_item, "#C62828").pack(fill="x", pady=4)
-        btn("Simpan Transaksi", self.simpan_transaksi, "#2E7D32").pack(fill="x", pady=4)
-        btn("Cetak Struk (PDF)", self.cetak_pdf, self.color_mid).pack(fill="x", pady=4)
+        btn("Simpan & Cetak", self.simpan_dan_cetak, "#2E7D32").pack(fill="x", pady=4)
+
+        
         btn("Kosongkan Keranjang", self.kosongkan_keranjang, "#6D4C41").pack(fill="x", pady=4)
         tk.Button(actions, text="Riwayat Transaksi", bg=self.color_dark, fg="white",
                   relief="flat", font=self.btn_font, command=lambda: RiwayatWindow(self.win)).pack(fill="x", pady=4)
@@ -354,12 +356,13 @@ class KasirWindow:
             return
         self.kembali_var.set(str(bayar - total))
 
-    def simpan_transaksi(self):
+    # ------------------ NEW: Simpan transaksi lalu cetak dari DB ------------------
+    def simpan_dan_cetak(self):
         if not self.keranjang:
             messagebox.showwarning("Peringatan", "Keranjang kosong")
             return
         pel = self.pelanggan_var.get()
-        if pel not in self.data_pelanggan:
+        if pel not in getattr(self, 'data_pelanggan', {}):
             messagebox.showwarning("Peringatan", "Pilih pelanggan dulu")
             return
         id_pelanggan = self.data_pelanggan[pel]
@@ -367,19 +370,31 @@ class KasirWindow:
         try:
             db = connect_db()
             with db.cursor() as cur:
+                # validasi stok final sebelum insert
                 for item in self.keranjang:
                     cur.execute("SELECT stok FROM barang WHERE id_barang=%s", (item['id_barang'],))
-                    stok_saat_ini = cur.fetchone()['stok']
+                    row = cur.fetchone()
+                    if not row:
+                        messagebox.showwarning("Stok Habis", f"Barang {item['nama_barang']} tidak ditemukan di database.")
+                        db.close()
+                        return
+                    stok_saat_ini = row['stok']
                     if item['jumlah'] > stok_saat_ini:
                         messagebox.showwarning("Stok Habis",
                             f"Stok {item['nama_barang']} tidak cukup.\nTersedia: {stok_saat_ini}")
+                        db.close()
                         return
-                total = int(self.total_var.get())
+
+                total = int(self.total_var.get()) if self.total_var.get().isdigit() else sum(i['subtotal'] for i in self.keranjang)
+
+                # INSERT transaksi
                 cur.execute("""
                     INSERT INTO transaksi (id_pelanggan, id_kasir, total)
                     VALUES (%s, %s, %s)
                 """, (id_pelanggan, id_kasir, total))
                 id_trans = cur.lastrowid
+
+                # INSERT detail + update stok
                 for item in self.keranjang:
                     cur.execute("""
                         INSERT INTO detail_transaksi (id_transaksi, id_barang, jumlah, subtotal)
@@ -388,14 +403,143 @@ class KasirWindow:
                     cur.execute("""
                         UPDATE barang SET stok = stok - %s WHERE id_barang = %s
                     """, (item['jumlah'], item['id_barang']))
+
             db.commit()
             db.close()
+
+            # CETAK berdasarkan data yang tersimpan di DB
+            self.cetak_struk_db(id_trans)
+
             messagebox.showinfo("Sukses", f"Transaksi berhasil disimpan!\nID: {id_trans}")
             self.kosongkan_keranjang()
             self.load_items_to_combo()
         except Exception as e:
             messagebox.showerror("Gagal", f"Error simpan transaksi:\n{e}")
 
+    # ------------------ CETAK STRUK DARI DATABASE (PASTI AKURAT) ------------------
+    def cetak_struk_db(self, id_transaksi):
+        try:
+            db = connect_db()
+            with db.cursor() as cur:
+                # ambil header transaksi
+                cur.execute("""
+                    SELECT t.id_transaksi, t.tanggal, p.nama_pelanggan, t.id_kasir, t.total
+                    FROM transaksi t
+                    LEFT JOIN pelanggan p ON t.id_pelanggan = p.id_pelanggan
+                    WHERE t.id_transaksi = %s
+                """, (id_transaksi,))
+                header = cur.fetchone()
+
+                # ambil detail
+                cur.execute("""
+                    SELECT b.nama_barang, d.jumlah, b.harga, d.subtotal
+                    FROM detail_transaksi d
+                    JOIN barang b ON d.id_barang = b.id_barang
+                    WHERE d.id_transaksi = %s
+                """, (id_transaksi,))
+                details = cur.fetchall()
+            db.close()
+
+            # fallback kalau header None
+            if not header:
+                messagebox.showerror("Error", "Data transaksi tidak ditemukan untuk cetak.")
+                return
+
+            STRUK_WIDTH = 226
+            STRUK_HEIGHT = 600
+            base = os.path.dirname(os.path.abspath(__file__))
+            nama_file = f"struk_{id_transaksi}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+            path = os.path.join(base, nama_file)
+
+            pdf = canvas.Canvas(path, pagesize=(STRUK_WIDTH, STRUK_HEIGHT))
+            y = 570
+            try:
+                logo_path = "download.png"
+                logo = ImageReader(logo_path)
+                lw, lh = logo.getSize()
+                scale = 60 / lh
+                new_w = lw * scale
+                new_h = lh * scale
+                pdf.drawImage(logo, (STRUK_WIDTH - new_w) / 2, y - new_h, width=new_w, height=new_h)
+                y -= new_h + 10
+            except:
+                pass
+
+            pdf.setFont("Helvetica-Bold", 12)
+            pdf.drawCentredString(STRUK_WIDTH / 2, y, "LUMI.CO")
+            y -= 15
+
+            pdf.setFont("Helvetica", 8)
+            pdf.drawCentredString(STRUK_WIDTH / 2, y, "Jl. Raya Jember, Jawa Timur")
+            y -= 10
+            pdf.line(0, y, STRUK_WIDTH, y)
+            y -= 10
+
+            tgl = header.get('tanggal') if isinstance(header, dict) and header.get('tanggal') else datetime.now().strftime('%d/%m/%Y %H:%M')
+            nama_pelanggan = header.get('nama_pelanggan') if isinstance(header, dict) else (header[2] if len(header) > 2 else "")
+            pdf.drawString(5, y, f"Tanggal: {tgl}")
+            y -= 10
+            pdf.drawString(5, y, f"Pelanggan: {nama_pelanggan}")
+            y -= 15
+            pdf.line(0, y, STRUK_WIDTH, y)
+            y -= 10
+
+            pdf.setFont("Helvetica-Bold", 8)
+            pdf.drawString(5, y, "Barang")
+            pdf.drawRightString(STRUK_WIDTH - 5, y, "Subtotal")
+            y -= 10
+            pdf.line(0, y, STRUK_WIDTH, y)
+            y -= 6
+
+            pdf.setFont("Helvetica", 8)
+            for d in details:
+                nama = d['nama_barang'] if isinstance(d, dict) else d[0]
+                jumlah = d['jumlah'] if isinstance(d, dict) else d[1]
+                harga = d['harga'] if isinstance(d, dict) else d[2]
+                subtotal = d['subtotal'] if isinstance(d, dict) else d[3]
+
+                pdf.drawString(5, y, str(nama))
+                y -= 10
+                pdf.drawString(10, y, f"{jumlah} x Rp{harga}")
+                pdf.drawRightString(STRUK_WIDTH - 5, y, f"Rp{subtotal}")
+                y -= 14
+
+            pdf.line(0, y, STRUK_WIDTH, y)
+            y -= 10
+
+            total = header['total'] if isinstance(header, dict) and 'total' in header else (header[4] if len(header) > 4 else 0)
+            pdf.setFont("Helvetica-Bold", 9)
+            pdf.drawString(5, y, "TOTAL")
+            pdf.drawRightString(STRUK_WIDTH - 5, y, f"Rp{total}")
+            y -= 14
+
+            bayar = int(self.bayar_entry.get() or 0) if hasattr(self, 'bayar_entry') else 0
+            kembali = bayar - total if bayar >= total else 0
+
+            pdf.setFont("Helvetica", 8)
+            pdf.drawString(5, y, "Bayar")
+            pdf.drawRightString(STRUK_WIDTH - 5, y, f"Rp{bayar}")
+            y -= 12
+
+            pdf.drawString(5, y, "Kembali")
+            pdf.drawRightString(STRUK_WIDTH - 5, y, f"Rp{kembali}")
+            y -= 20
+
+            pdf.line(0, y, STRUK_WIDTH, y)
+            y -= 15
+
+            pdf.setFont("Helvetica-Oblique", 8)
+            pdf.drawCentredString(STRUK_WIDTH / 2, y, "Terima kasih telah berbelanja!")
+            y -= 10
+            pdf.drawCentredString(STRUK_WIDTH / 2, y, "Barang tidak dapat dikembalikan.")
+
+            pdf.save()
+            messagebox.showinfo("Sukses", f"Struk disimpan di:\n{path}")
+
+        except Exception as e:
+            messagebox.showerror("Gagal cetak", f"{e}")
+
+    # tetap biarkan fungsi cetak_pdf lama (cetak langsung dari keranjang jika perlu)
     def cetak_pdf(self):
         if not self.keranjang:
             messagebox.showwarning("Peringatan", "Keranjang kosong")
