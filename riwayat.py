@@ -10,34 +10,35 @@ class RiwayatWindow:
         self.win = tk.Toplevel(parent)
         self.win.title("Riwayat Transaksi")
         self.win.geometry("900x550")
-        self.win.configure(bg="#f8f6f4")
+        self.win.configure(bg="#eaddcf")  # coklat muda
 
-        # ---------- HEADER ----------
-        header = tk.Frame(self.win, bg="#f8f6f4")
-        header.pack(fill="x", pady=(12, 4))
+        # ====================== HEADER ======================
+        header = tk.Frame(self.win, bg="#5a4638")
+        header.pack(fill="x")
 
         tk.Label(
             header, text="Riwayat Transaksi",
             font=("Poppins", 18, "bold"),
-            bg="#f8f6f4", fg="#2c3e50"
-        ).pack(side="left", padx=15)
+            bg="#5a4638", fg="white"
+        ).pack(side="left", padx=15, pady=12)
+
+        # Tombol header
+        btn_style = dict(font=("Poppins", 11), relief="flat", padx=10, pady=5)
+
+        tk.Button(
+            header, text="⟳ Refresh",
+            bg="#7e6b5a", fg="white",
+            command=self.load_transaksi, **btn_style
+        ).pack(side="right", padx=6)
 
         tk.Button(
             header, text="⬇ Export Excel",
             bg="#20bf6b", fg="white",
-            font=("Poppins", 11),
-            relief="flat", command=self.export_excel
+            command=self.export_excel, **btn_style
         ).pack(side="right", padx=6)
 
-        tk.Button(
-            header, text="⟳ Refresh",
-            bg="#34495e", fg="white",
-            font=("Poppins", 11),
-            relief="flat", command=self.load_transaksi
-        ).pack(side="right", padx=6)
-
-        # ---------- TABLE ----------
-        table_frame = tk.Frame(self.win, bg="#f8f6f4")
+        # ====================== TABLE ======================
+        table_frame = tk.Frame(self.win, bg="#eaddcf")
         table_frame.pack(expand=True, fill="both", padx=15, pady=10)
 
         cols = ("id", "tanggal", "pelanggan", "kasir", "total")
@@ -45,12 +46,18 @@ class RiwayatWindow:
 
         style = ttk.Style()
         style.theme_use("clam")
+
+        # header tabel
         style.configure("Treeview.Heading",
                         font=("Poppins", 11, "bold"),
-                        background="#2c3e50", foreground="white")
+                        background="#5a4638", foreground="white")
+
+        # isi tabel
         style.configure("Treeview",
                         font=("Poppins", 10),
-                        rowheight=26)
+                        rowheight=28,
+                        background="#f5efe6",
+                        fieldbackground="#f5efe6")
 
         for c in cols:
             self.tree.heading(c, text=c.capitalize())
@@ -60,24 +67,25 @@ class RiwayatWindow:
         self.tree.column("pelanggan", width=160)
         self.tree.column("kasir", width=150)
         self.tree.column("total", width=110, anchor="e")
-
-        self.tree.pack(expand=True, fill="both")
+        self.tree.pack(expand=True, fill="both", side="left")
 
         scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side="right", fill="y")
 
-        # ---------- FOOTER ----------
-        footer = tk.Frame(self.win, bg="#f8f6f4")
+        # ====================== FOOTER ======================
+        footer = tk.Frame(self.win, bg="#eaddcf")
         footer.pack(fill="x", pady=8)
 
         tk.Button(
             footer, text="🔍   Lihat Detail",
-            bg="#34495e", fg="white",
+            bg="#7e6b5a", fg="white",
             font=("Poppins", 11),
-            relief="flat", command=self.lihat_detail
+            relief="flat", padx=10, pady=5,
+            command=self.lihat_detail
         ).pack(side="left", padx=6)
 
+        # Double click untuk buka detail
         self.tree.bind("<Double-1>", lambda e: self.lihat_detail())
 
         self.load_transaksi()
@@ -104,9 +112,11 @@ class RiwayatWindow:
 
             for r in rows:
                 tanggal = r["tanggal"].strftime("%d/%m/%Y %H:%M:%S")
-                self.tree.insert("", "end",
-                                 values=(r["id_transaksi"], tanggal,
-                                         r["nama_pelanggan"], r["nama_kasir"], r["total"]))
+                self.tree.insert(
+                    "", "end",
+                    values=(r["id_transaksi"], tanggal,
+                            r["nama_pelanggan"], r["nama_kasir"], r["total"])
+                )
 
         except Exception as e:
             messagebox.showerror("Error", f"Gagal load riwayat:\n{e}")
@@ -125,16 +135,17 @@ class RiwayatWindow:
         win = tk.Toplevel(self.win)
         win.title(f"Detail Transaksi #{id_trans}")
         win.geometry("600x380")
-        win.configure(bg="#f8f6f4")
+        win.configure(bg="#eaddcf")
 
         tk.Label(
             win, text=f"Detail Transaksi #{id_trans}",
             font=("Poppins", 14, "bold"),
-            bg="#f8f6f4", fg="#2c3e50"
+            bg="#eaddcf", fg="#5a4638"
         ).pack(pady=8)
 
         cols = ("barang", "jumlah", "harga", "subtotal")
         tree = ttk.Treeview(win, columns=cols, show="headings", height=12)
+
         for c in cols:
             tree.heading(c, text=c.capitalize())
 

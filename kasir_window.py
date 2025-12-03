@@ -14,62 +14,96 @@ class KasirWindow:
         self.master = master
         self.id_kasir = id_user
 
+        # ---------- Window ----------
         self.win = tk.Toplevel(master)
         self.win.title("Form Kasir - LUMI.CO")
-        self.win.geometry("960x700")
-        self.win.configure(bg="#f2f4f7")
+        # sedikit lebih lebar untuk tampilan kasir profesional
+        self.win.geometry("1100x720")
+        # warna latar netral krem (tetap feel coklat)
+        self.win.configure(bg="#f3ebe6")
 
         self.win.protocol("WM_DELETE_WINDOW", self.kembali_ke_dashboard)
 
-        # HEADER
-        header = tk.Frame(self.win, bg="#1f3a5b", height=70)
+        # ---------- Warna Tema (coklat) ----------
+        self.color_dark = "#5D4037"    # dark brown (header / tombol utama)
+        self.color_mid = "#8D6E63"     # medium brown (aksen)
+        self.color_light = "#F7F1EE"   # very light cream
+        self.color_accent = "#3E2723"  # deep accent
+        self.btn_font = ("Segoe UI", 10, "bold")
+        self.base_font = ("Segoe UI", 10)
+
+        # ---------- HEADER ----------
+        header = tk.Frame(self.win, bg=self.color_dark, height=80)
         header.pack(fill="x")
+        header.pack_propagate(False)
         tk.Label(
             header,
             text="🧾  FORM TRANSAKSI KASIR - LUMI.CO",
             fg="white",
-            bg="#1f3a5b",
-            font=("Segoe UI", 17, "bold")
-        ).pack(pady=16)
+            bg=self.color_dark,
+            font=("Segoe UI", 18, "bold")
+        ).pack(side="left", padx=20)
 
-        # MAIN CONTAINER
-        main = tk.Frame(self.win, bg="#f2f4f7")
-        main.pack(fill="both", expand=True, padx=12, pady=12)
+        # small meta on right
+        tk.Label(
+            header,
+            text=f"Kasir ID: {self.id_kasir}",
+            fg="#FFDDAA",
+            bg=self.color_dark,
+            font=("Segoe UI", 10, "italic")
+        ).pack(side="right", padx=16)
 
-        top_frame = tk.Frame(main, bg="#f2f4f7")
-        top_frame.pack(fill="x", pady=(0, 6))
+        # ---------- MAIN CONTAINER ----------
+        main = tk.Frame(self.win, bg=self.color_light)
+        main.pack(fill="both", expand=True, padx=14, pady=12)
+
+        # top area: pelanggan + search barang + tombol tambah
+        top_frame = tk.Frame(main, bg=self.color_light)
+        top_frame.pack(fill="x", pady=(4, 8))
         top_frame.columnconfigure(1, weight=1)
 
         # Pelanggan
-        tk.Label(top_frame, text="👤 Pelanggan:", bg="#f2f4f7", font=("Segoe UI", 10)).grid(row=0, column=0, sticky="w", padx=6)
+        tk.Label(top_frame, text="👤 Pelanggan:", bg=self.color_light, font=self.base_font).grid(row=0, column=0, sticky="w", padx=6)
         self.pelanggan_var = tk.StringVar()
         self.cmb_pelanggan = ttk.Combobox(top_frame, textvariable=self.pelanggan_var)
         self.cmb_pelanggan.grid(row=0, column=1, sticky="ew", padx=6)
         tk.Button(
             top_frame, text="+ Pelanggan Baru",
-            bg="#1f3a5b", fg="white", relief="flat",
-            font=("Segoe UI", 9),
+            bg=self.color_mid, fg="white", relief="flat",
+            font=("Segoe UI", 10),
             command=self.tambah_pelanggan
         ).grid(row=0, column=2, padx=6)
 
-        # Barang
-        tk.Label(top_frame, text="📦 Pilih Barang:", bg="#f2f4f7", font=("Segoe UI", 10)).grid(row=1, column=0, sticky="w", padx=6, pady=2)
+        # Barang (dengan label cari agar terasa kasir modern)
+        tk.Label(top_frame, text="📦 Pilih Barang / Cari:", bg=self.color_light, font=self.base_font).grid(row=1, column=0, sticky="w", padx=6, pady=6)
         self.cmb_var = tk.StringVar()
-        self.combo = ttk.Combobox(top_frame, textvariable=self.cmb_var)
-        self.combo.grid(row=1, column=1, sticky="ew", padx=6)
+        # gunakan entry + combobox supaya user bisa ketik cepat
+        search_frame = tk.Frame(top_frame, bg=self.color_light)
+        search_frame.grid(row=1, column=1, sticky="ew", padx=6)
+        search_frame.columnconfigure(0, weight=1)
+        self.combo = ttk.Combobox(search_frame, textvariable=self.cmb_var)
+        self.combo.grid(row=0, column=0, sticky="ew")
         tk.Button(
             top_frame, text="Tambah ke Keranjang",
-            bg="#1f3a5b", fg="white", relief="flat",
-            font=("Segoe UI", 9),
+            bg=self.color_dark, fg="white", relief="flat",
+            font=self.btn_font,
             command=self.tambah_keranjang
         ).grid(row=1, column=2, padx=6)
 
-        # TABLE
-        tree_frame = tk.Frame(main, bg="white", bd=1, relief="solid")
-        tree_frame.pack(fill="both", expand=True, padx=6, pady=2)
+        # ---------- MAIN BODY: LEFT = TABLE, RIGHT = SUMMARY ----------
+        body = tk.Frame(main, bg=self.color_light)
+        body.pack(fill="both", expand=True)
+
+        # kiri: table
+        left = tk.Frame(body, bg=self.color_light)
+        left.pack(side="left", fill="both", expand=True, padx=(0,8))
+
+        # TABLE (dengan border halus)
+        tree_frame = tk.Frame(left, bg=self.color_light, bd=1, relief="solid")
+        tree_frame.pack(fill="both", expand=True, padx=4, pady=2)
 
         cols = ('no', 'id_barang', 'nama_barang', 'harga', 'jumlah', 'subtotal')
-        self.tree = ttk.Treeview(tree_frame, columns=cols, show='headings', height=13)  # FIX — tombol muncul
+        self.tree = ttk.Treeview(tree_frame, columns=cols, show='headings', height=18)
 
         self.tree.heading('no', text='No')
         self.tree.heading('id_barang', text='ID')
@@ -78,57 +112,78 @@ class KasirWindow:
         self.tree.heading('jumlah', text='Jumlah')
         self.tree.heading('subtotal', text='Subtotal')
 
+        # kolom lebih lebar untuk nama barang
         self.tree.column('no', width=50, anchor='center')
         self.tree.column('id_barang', width=80, anchor='center')
-        self.tree.column('nama_barang', width=300, anchor='w')
+        self.tree.column('nama_barang', width=360, anchor='w')
         self.tree.column('harga', width=120, anchor='e')
-        self.tree.column('jumlah', width=80, anchor='center')
-        self.tree.column('subtotal', width=140, anchor='e')
+        self.tree.column('jumlah', width=90, anchor='center')
+        self.tree.column('subtotal', width=150, anchor='e')
 
         vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=vsb.set)
         vsb.pack(side='right', fill='y')
         self.tree.pack(fill='both', expand=True, side='left')
 
-        # BOTTOM TOTAL
-        bottom_frame = tk.Frame(main, bg="#f2f4f7")
-        bottom_frame.pack(fill="x", pady=(6, 0))
+        # kanan: ringkasan & aksi (highlight total besar)
+        right = tk.Frame(body, bg=self.color_light, width=320)
+        right.pack(side="right", fill="y")
 
-        tk.Label(bottom_frame, text="Total:", bg="#f2f4f7", font=("Segoe UI", 10)).grid(row=0, column=0, sticky='w', padx=6)
+        # ringkasan box
+        summary_box = tk.Frame(right, bg="#fffaf7", bd=1, relief="solid")
+        summary_box.pack(fill="both", padx=4, pady=4, ipady=8)
+
+        # Total besar — fokus utama kasir
+        tk.Label(summary_box, text="JUMLAH BELANJA", bg="#fffaf7", font=("Segoe UI", 11, "bold")).pack(anchor="w", padx=12, pady=(8,2))
         self.total_var = tk.StringVar(value='0')
-        tk.Label(bottom_frame, textvariable=self.total_var, bg="#f2f4f7",
-                 font=("Segoe UI", 12, "bold"), fg="#1f3a5b").grid(row=0, column=1, sticky='w')
+        # font sangat besar agar mudah dibaca saat transaksi besar
+        tk.Label(summary_box, textvariable=self.total_var, bg="#fffaf7",
+                 font=("Segoe UI", 28, "bold"), fg=self.color_accent).pack(anchor="w", padx=12)
 
-        tk.Label(bottom_frame, text="Bayar:", bg="#f2f4f7").grid(row=1, column=0, sticky='w', padx=6, pady=4)
-        self.bayar_entry = tk.Entry(bottom_frame)
-        self.bayar_entry.grid(row=1, column=1, sticky='w', padx=6)
+        # rincian lain
+        rincian = tk.Frame(summary_box, bg="#fffaf7")
+        rincian.pack(fill="x", padx=12, pady=10)
+        tk.Label(rincian, text="Bayar:", bg="#fffaf7", font=self.base_font).grid(row=0, column=0, sticky='w')
+        self.bayar_entry = tk.Entry(rincian, font=("Segoe UI", 12))
+        self.bayar_entry.grid(row=0, column=1, sticky='e', padx=6)
 
-        tk.Button(bottom_frame, text="Hitung Kembalian", bg="#1f3a5b", fg="white", relief="flat",
-                  command=self.hitung_kembalian).grid(row=1, column=2, padx=6)
+        tk.Button(rincian, text="Hitung Kembalian", bg=self.color_dark, fg="white",
+                  relief="flat", font=self.btn_font, command=self.hitung_kembalian).grid(row=1, column=0, columnspan=2, pady=(8,0), sticky="ew")
 
-        tk.Label(bottom_frame, text="Kembalian:", bg="#f2f4f7").grid(row=2, column=0, sticky='w', padx=6)
+        tk.Label(rincian, text="Kembalian:", bg="#fffaf7", font=self.base_font).grid(row=2, column=0, sticky='w', pady=(8,0))
         self.kembali_var = tk.StringVar(value='0')
-        tk.Label(bottom_frame, textvariable=self.kembali_var, bg="#f2f4f7").grid(row=2, column=1, sticky='w')
+        tk.Label(rincian, textvariable=self.kembali_var, bg="#fffaf7", font=("Segoe UI", 12, "bold")).grid(row=2, column=1, sticky='e', pady=(8,0))
 
-        # ACTION BUTTONS
-        actions = tk.Frame(main, bg="#f2f4f7")
-        actions.pack(fill="x", pady=8)
+        # pemisah
+        tk.Frame(right, height=6, bg=self.color_light).pack(fill="x")
 
-        def btn(txt, cmd, color="#1f3a5b"):
-            return tk.Button(actions, text=txt, bg=color, fg="white",
-                             relief="flat", font=("Segoe UI", 9, "bold"), command=cmd)
+        # tombol aksi utama di kanan (lebih mudah dijangkau kasir)
+        actions = tk.Frame(right, bg=self.color_light)
+        actions.pack(fill="x", padx=4, pady=6)
 
-        btn("Hapus Item", self.hapus_item, "#c0392b").pack(side='left', padx=5)
-        btn("Simpan Transaksi", self.simpan_transaksi, "#2e8b57").pack(side='left', padx=5)
-        btn("Cetak Struk (PDF)", self.cetak_pdf, "#1f3a5b").pack(side='left', padx=5)
-        btn("Kosongkan Keranjang", self.kosongkan_keranjang, "#8e6e53").pack(side='left', padx=5)
-        btn("Riwayat Transaksi", lambda: RiwayatWindow(self.win), "#1f3a5b").pack(side='left', padx=5)
+        def btn(txt, cmd, color=None):
+            c = color if color else self.color_dark
+            return tk.Button(actions, text=txt, bg=c, fg="white",
+                             relief="flat", font=self.btn_font, command=cmd)
 
-        tk.Button(actions, text="⬅  Kembali ke Dashboard", bg="#1f3a5b", fg="white",
-                  relief="flat", font=("Segoe UI", 9, "bold"),
-                  command=self.kembali_ke_dashboard).pack(side='right', padx=5)
+        btn("Hapus Item", self.hapus_item, "#C62828").pack(fill="x", pady=4)
+        btn("Simpan Transaksi", self.simpan_transaksi, "#2E7D32").pack(fill="x", pady=4)
+        btn("Cetak Struk (PDF)", self.cetak_pdf, self.color_mid).pack(fill="x", pady=4)
+        btn("Kosongkan Keranjang", self.kosongkan_keranjang, "#6D4C41").pack(fill="x", pady=4)
+        tk.Button(actions, text="Riwayat Transaksi", bg=self.color_dark, fg="white",
+                  relief="flat", font=self.btn_font, command=lambda: RiwayatWindow(self.win)).pack(fill="x", pady=4)
 
-        # INIT DATA
+        # tombol kembali di bawah
+        tk.Button(right, text="⬅  Kembali ke Dashboard", bg=self.color_dark, fg="white",
+                  relief="flat", font=self.btn_font, command=self.kembali_ke_dashboard).pack(fill="x", padx=4, pady=(14,4))
+
+        # FOOTER kecil
+        footer = tk.Frame(self.win, bg=self.color_light, height=28)
+        footer.pack(fill="x", side="bottom")
+        footer.pack_propagate(False)
+        tk.Label(footer, text="LUMI.CO • Kasir", bg=self.color_light, fg="#7D5A50", font=("Segoe UI", 9)).pack(side="left", padx=8)
+
+        # ---------- INIT DATA (TIDAK DIUBAH FUNGSI) ----------
         self.keranjang = []
         self.load_items_to_combo()
         self.load_pelanggan()
@@ -205,7 +260,7 @@ class KasirWindow:
             except Exception as e:
                 messagebox.showerror("Gagal", f"Error tambah pelanggan:\n{e}")
 
-        tk.Button(win, text="Simpan", bg="#1f3a5b", fg="white", command=save).pack(pady=10)
+        tk.Button(win, text="Simpan", bg=self.color_dark, fg="white", command=save).pack(pady=10)
 
     def tambah_keranjang(self):
         key = self.cmb_var.get()
@@ -252,7 +307,7 @@ class KasirWindow:
             qty_window.destroy()
             self.refresh_tree()
 
-        tk.Button(qty_window, text="OK", bg="#1f3a5b", fg="white", command=add_qty).pack(pady=10)
+        tk.Button(qty_window, text="OK", bg=self.color_dark, fg="white", command=add_qty).pack(pady=10)
 
     def refresh_tree(self):
         for r in self.tree.get_children():
