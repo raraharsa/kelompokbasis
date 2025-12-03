@@ -413,6 +413,9 @@ class KasirWindow:
             messagebox.showinfo("Sukses", f"Transaksi berhasil disimpan!\nID: {id_trans}")
             self.kosongkan_keranjang()
             self.load_items_to_combo()
+            self.bayar_entry.delete(0, tk.END)
+            self.kembali_var.set("0")
+
         except Exception as e:
             messagebox.showerror("Gagal", f"Error simpan transaksi:\n{e}")
 
