@@ -5,7 +5,7 @@ from tkinter import messagebox  # ini untuk menampilkan pesan error ke user
 DB_CONFIG = {
     'host': 'localhost',                     # alamat server MySQL
     'user': 'root',                          # username MySQL
-    'password': 'arin12345',                 # password MySQL
+    'password': '',                 # password MySQL
     'database': 'tokosaya',                 # nama database yang dipakai
     'cursorclass': pymysql.cursors.DictCursor  # biar hasil query berupa dictionary
 }
